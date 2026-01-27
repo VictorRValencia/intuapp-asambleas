@@ -91,7 +91,7 @@ const mapRegistryRow = (row) => {
   };
 };
 
-// 1. Create Admin for Entity
+// 1. Create Entity Admin
 export async function createEntityAdmin(adminData) {
   try {
     const docRef = await addDoc(collection(db, "admin"), {
@@ -105,15 +105,13 @@ export async function createEntityAdmin(adminData) {
   }
 }
 
-// 2. Create Entity
 export async function createEntity(
   entityData,
   adminId,
   operatorId,
-  representativeId
+  representativeId,
 ) {
   try {
-    // A. Create Entity Document
     const entityRef = await addDoc(collection(db, "entity"), {
       ...entityData,
       lastUpdateOwners: [adminId], // Store admin ID
@@ -128,7 +126,6 @@ export async function createEntity(
       entities: arrayUnion(entityRef.id),
     });
 
-    // Also update Representative document if needed (optional, depending on where you want to store it)
     if (representativeId) {
       const repRef = doc(db, "representative-operator", representativeId);
       await updateDoc(repRef, {
@@ -143,12 +140,11 @@ export async function createEntity(
   }
 }
 
-// 3. Get Entities by Operator ID
 export async function getEntitiesByOperator(operatorId) {
   try {
     const q = query(
       collection(db, "entity"),
-      where("operatorId", "==", operatorId)
+      where("operatorId", "==", operatorId),
     );
     const querySnapshot = await getDocs(q);
     const entities = [];
@@ -162,13 +158,10 @@ export async function getEntitiesByOperator(operatorId) {
   }
 }
 
-// 4. Create Assembly Registries List (Table container)
 export async function createAssemblyRegistriesList(registriesData) {
   try {
-    // Transform registries array into a map for faster updates and easier management in one doc
     const assemblyRegistries = {};
     registriesData.forEach((row) => {
-      // Generate a unique ID for each row if it doesn't have one
       const randomId = doc(collection(db, "temp")).id;
       assemblyRegistries[randomId] = mapRegistryRow(row);
     });
@@ -185,7 +178,6 @@ export async function createAssemblyRegistriesList(registriesData) {
   }
 }
 
-// 5. Get Entity by ID
 export async function getEntityById(entityId) {
   try {
     const docRef = doc(db, "entity", entityId);
@@ -202,7 +194,6 @@ export async function getEntityById(entityId) {
   }
 }
 
-// 6. Get Assembly Registries List
 export async function getAssemblyRegistriesList(listId) {
   try {
     const docRef = doc(db, "assemblyRegistriesList", listId);
@@ -219,25 +210,15 @@ export async function getAssemblyRegistriesList(listId) {
   }
 }
 
-// 7. Update Assembly Registries List (Add/Merge new data)
 export async function updateAssemblyRegistriesList(listId, newData) {
   try {
     const docRef = doc(db, "assemblyRegistriesList", listId);
 
-    // Transform new data into map
     const newRegistries = {};
     newData.forEach((row) => {
       const randomId = doc(collection(db, "temp")).id;
       newRegistries[randomId] = mapRegistryRow(row);
     });
-
-    // We need to use dot notation to update nested fields if we wanted to merge,
-    // but here we want to update the 'assemblyRegistries' map.
-    // If we want to REPLACE the entire list, we just set it.
-    // If we want to APPEND, we need to read first or use set with merge (but map keys are unique).
-    // The user said "actualiza... con los nuevos datos subidos", implying replacement or addition.
-    // Usually "Update Database" implies replacing the old one with the new one in this context (bulk upload).
-    // Let's assume REPLACEMENT for now as it's cleaner for "uploading a new version".
 
     await updateDoc(docRef, {
       assemblyRegistries: newRegistries,
@@ -251,7 +232,6 @@ export async function updateAssemblyRegistriesList(listId, newData) {
   }
 }
 
-// 8. Update Entity
 export async function updateEntity(entityId, entityData) {
   try {
     const entityRef = doc(db, "entity", entityId);
@@ -267,7 +247,6 @@ export async function updateEntity(entityId, entityData) {
   }
 }
 
-// 9. Delete Entity
 export async function deleteEntity(entityId) {
   try {
     await deleteDoc(doc(db, "entity", entityId));
@@ -277,12 +256,11 @@ export async function deleteEntity(entityId) {
     return { success: false, error };
   }
 }
-// 10. Update a single registry's registration status
 export async function updateRegistryStatus(
   listId,
   registryId,
   status,
-  additionalData = {}
+  additionalData = {},
 ) {
   try {
     const docRef = doc(db, "assemblyRegistriesList", listId);
@@ -303,6 +281,22 @@ export async function updateRegistryStatus(
       if (additionalData.phone)
         updates[`assemblyRegistries.${registryId}.phone`] =
           additionalData.phone;
+      if (additionalData.powerUrl)
+        updates[`assemblyRegistries.${registryId}.powerUrl`] =
+          additionalData.powerUrl;
+      if (additionalData.role)
+        updates[`assemblyRegistries.${registryId}.role`] = additionalData.role;
+      if (additionalData.document)
+        updates[`assemblyRegistries.${registryId}.userDocument`] =
+          additionalData.document;
+    } else {
+      updates[`assemblyRegistries.${registryId}.firstName`] = "";
+      updates[`assemblyRegistries.${registryId}.lastName`] = "";
+      updates[`assemblyRegistries.${registryId}.email`] = "";
+      updates[`assemblyRegistries.${registryId}.phone`] = "";
+      updates[`assemblyRegistries.${registryId}.powerUrl`] = "";
+      updates[`assemblyRegistries.${registryId}.role`] = "";
+      updates[`assemblyRegistries.${registryId}.userDocument`] = "";
     }
 
     await updateDoc(docRef, updates);
@@ -313,7 +307,6 @@ export async function updateRegistryStatus(
   }
 }
 
-// 11. Reset all registration statuses for a list
 export async function resetAssemblyRegistries(listId) {
   try {
     const docRef = doc(db, "assemblyRegistriesList", listId);
@@ -325,11 +318,13 @@ export async function resetAssemblyRegistries(listId) {
 
     Object.keys(registries).forEach((key) => {
       const reg = { ...registries[key] };
-      // Remove temporary participant data on reset
       delete reg.firstName;
       delete reg.lastName;
       delete reg.email;
       delete reg.phone;
+      delete reg.role;
+      delete reg.powerUrl;
+      delete reg.userDocument;
 
       updatedRegistries[key] = {
         ...reg,
@@ -349,7 +344,6 @@ export async function resetAssemblyRegistries(listId) {
   }
 }
 
-// 12. Toggle vote blocked for a registry
 export async function toggleVoteBlock(listId, registryId, isBlocked) {
   try {
     const docRef = doc(db, "assemblyRegistriesList", listId);
@@ -359,6 +353,52 @@ export async function toggleVoteBlock(listId, registryId, isBlocked) {
     return { success: true };
   } catch (error) {
     console.error("Error toggling vote block:", error);
+    return { success: false, error };
+  }
+}
+
+export async function toggleRegistryDeletion(listId, registryId, isDeleted) {
+  try {
+    const docRef = doc(db, "assemblyRegistriesList", listId);
+    await updateDoc(docRef, {
+      [`assemblyRegistries.${registryId}.isDeleted`]: isDeleted,
+      [`assemblyRegistries.${registryId}.registerInAssembly`]: isDeleted
+        ? false
+        : false,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling registry deletion:", error);
+    return { success: false, error };
+  }
+}
+
+export async function getTypeEntities(typeId) {
+  try {
+    const docRef = doc(db, "type-entity", String(typeId));
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
+    } else {
+      return { success: false, error: "Type entity not found" };
+    }
+  } catch (error) {
+    console.error("Error fetching type entity:", error);
+    return { success: false, error };
+  }
+}
+
+export async function getEntityTypes() {
+  try {
+    const querySnapshot = await getDocs(collection(db, "type-entity"));
+    const types = [];
+    querySnapshot.forEach((doc) => {
+      types.push({ id: doc.id, ...doc.data() });
+    });
+    return { success: true, data: types };
+  } catch (error) {
+    console.error("Error fetching entity types:", error);
     return { success: false, error };
   }
 }

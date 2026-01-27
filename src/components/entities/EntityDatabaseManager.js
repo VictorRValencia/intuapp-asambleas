@@ -119,21 +119,15 @@ const EntityDatabaseManager = ({ entityData, registries, onRefresh }) => {
   };
 
   const handleDeleteRegistry = async (itemToDelete) => {
+    // Check if property is currently registered in an assembly
+    if (itemToDelete.registerInAssembly) {
+      return toast.error(
+        "No se puede eliminar una propiedad que ya tiene un registro de asambleísta activo. Por favor, elimine primero el registro desde la gestión de la asamblea."
+      );
+    }
+
     if (confirm("¿Estás seguro de eliminar este registro?")) {
       try {
-        // Filter out the item
-        // Note: Using deep equality or index if unique ID is missing.
-        // Assuming 'registries' is the current list in DB.
-        // itemToDelete is the object from the map.
-
-        // Use JSON stringify for comparison if no ID, or better yet, index if passed?
-        // Let's rely on filter. Be careful with duplicates.
-        // It's safer to pass the index from the render loop relative to the *full* user list,
-        // but here we have `currentItems` which is a slice.
-        // Actually, registries is the full list passed as prop.
-
-        // Let's filter by reference if possible, but these objects might be new references.
-        // Best strategy: If we assume registries is the raw array from the DB response:
         const updatedList = registries.filter((r) => r !== itemToDelete);
 
         const res = await updateAssemblyRegistriesList(
@@ -206,7 +200,7 @@ const EntityDatabaseManager = ({ entityData, registries, onRefresh }) => {
               onChange={handleFileUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
-            <Button variant="primary" size="S" icon={CloudUpload}>
+            <Button variant="primary" size="S" icon={CloudUpload} className="flex items-center gap-2 bg-[#94A2FF] !text-[#000000] hover:bg-[#7a8ce0] !font-bold px-6 py-3 font-semibold shadow-md transition">
               Actualizar Base de Datos
             </Button>
           </div>

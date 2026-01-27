@@ -72,7 +72,7 @@ export async function updateAssembly(assemblyId, assemblyData) {
 export async function toggleAssemblyVoteBlock(
   assemblyId,
   registryId,
-  isBlocked
+  isBlocked,
 ) {
   try {
     const docRef = doc(db, "assembly", assemblyId);
@@ -127,7 +127,7 @@ export async function deleteAssembly(assemblyId) {
     // 1. Delete all Questions
     if (assemblyData.questions && Array.isArray(assemblyData.questions)) {
       const deletePromises = assemblyData.questions.map((qId) =>
-        deleteDoc(doc(db, "question", qId))
+        deleteDoc(doc(db, "question", qId)),
       );
       await Promise.all(deletePromises);
     }
@@ -143,7 +143,7 @@ export async function deleteAssembly(assemblyId) {
       } catch (err) {
         console.warn(
           "Could not update entity reference, maybe entity is gone:",
-          err
+          err,
         );
       }
     }

@@ -29,6 +29,9 @@ export default function Home() {
           } else if (role === "2") {
             // ADMIN
             router.push("/administrador");
+          } else if (role === "3") {
+            // ADMIN
+            router.push("/operario");
           } else {
             setLoading(false);
           }

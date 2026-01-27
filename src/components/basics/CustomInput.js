@@ -25,7 +25,7 @@ export default function CustomInput({ label, placeholder, className = '', ...res
           border 
           border-gray-300 
           px-5
-          py-4
+          py-3
           text-gray-800 
           focus:outline-none 
           focus:ring-2 

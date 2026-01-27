@@ -20,6 +20,7 @@ const Button = ({
   className = "",
   disabled = false,
   type = "button",
+  icon = null,
   ...props
 }) => {
   const baseStyles =
@@ -43,6 +44,7 @@ const Button = ({
       hover:bg-secondary-hover-bg hover:text-secondary-hover-text hover:shadow-lg
       focus:ring-secondary-border
     `,
+    none: "",
   };
 
   const disabledStyles = disabled
@@ -59,8 +61,11 @@ const Button = ({
     .trim()
     .replace(/\s+/g, " ");
 
+  const Icon = icon;
+
   return (
     <button type={type} className={classes} disabled={disabled} {...props}>
+      {Icon && <Icon size={20} className="mr-2" />}
       {children}
     </button>
   );

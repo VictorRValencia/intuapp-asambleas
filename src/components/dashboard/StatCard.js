@@ -6,11 +6,14 @@ export default function StatCard({
   value,
   iconBgColor = "bg-[#EEF3FF]",
   iconColor = "text-[#6470FF]",
+  width = "",
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 py-6 px-6">
+    <div
+      className={`${width} bg-white rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 py-4 px-6`}
+    >
       <div
-        className={`w-16 h-16 rounded-lg ${iconBgColor} flex justify-center items-center text-center`}
+        className={` rounded-lg ${iconBgColor} flex justify-center items-center text-center`}
       >
         {Icon && <Icon size={32} className={iconColor} />}
       </div>

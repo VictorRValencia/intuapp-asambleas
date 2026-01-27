@@ -71,7 +71,7 @@ export default function CreateAssemblyForm({
           setEntityName(res.data.name);
           if (res.data.assemblyRegistriesListId) {
             const resList = await getAssemblyRegistriesList(
-              res.data.assemblyRegistriesListId
+              res.data.assemblyRegistriesListId,
             );
             if (resList.success) {
               setRegistriesMap(resList.data);
@@ -79,7 +79,7 @@ export default function CreateAssemblyForm({
                 ([key, value]) => ({
                   id: key,
                   ...value,
-                })
+                }),
               );
               setRegistries(regArray);
             }
@@ -162,7 +162,7 @@ export default function CreateAssemblyForm({
     if (!formData.date) return toast.error("La fecha es requerida");
     if (formData.type === "Virtual" && !formData.meetLink)
       return toast.error(
-        "El link de videollamada es requerido para asambleas virtuales"
+        "El link de videollamada es requerido para asambleas virtuales",
       );
 
     const now = new Date();
@@ -178,7 +178,7 @@ export default function CreateAssemblyForm({
       // return toast.error("La fecha y hora de la asamblea debe ser posterior a la actual");
       // Warning only for now or strict? The original code had it strict. Keep strict.
       return toast.error(
-        "La fecha y hora de la asamblea debe ser posterior a la actual"
+        "La fecha y hora de la asamblea debe ser posterior a la actual",
       );
     }
 
@@ -220,7 +220,7 @@ export default function CreateAssemblyForm({
     } else {
       const res = await createAssembly(
         { ...assemblyData, createdAt: new Date().toISOString() },
-        entityId
+        entityId,
       );
       if (res.success) {
         toast.success("Asamblea creada correctamente");
@@ -234,8 +234,8 @@ export default function CreateAssemblyForm({
 
   const filteredRegistries = registries.filter((item) =>
     Object.values(item).some((val) =>
-      String(val).toLowerCase().includes(searchTerm.toLowerCase())
-    )
+      String(val).toLowerCase().includes(searchTerm.toLowerCase()),
+    ),
   );
 
   const totalPages = Math.ceil(filteredRegistries.length / itemsPerPage);
@@ -243,7 +243,7 @@ export default function CreateAssemblyForm({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredRegistries.slice(
     indexOfFirstItem,
-    indexOfLastItem
+    indexOfLastItem,
   );
 
   if (loading)
@@ -431,34 +431,6 @@ export default function CreateAssemblyForm({
               </div>
               Documento de base de datos
             </label>
-            <label
-              className={`flex-1 p-4 border rounded-xl cursor-pointer flex items-center gap-2 ${
-                formData.accessMethod === "free_document"
-                  ? "border-blue-500 bg-blue-50"
-                  : "bg-white"
-              }`}
-            >
-              <input
-                type="radio"
-                className="hidden"
-                checked={formData.accessMethod === "free_document"}
-                onChange={() =>
-                  handleInputChange("accessMethod", "free_document")
-                }
-              />
-              <div
-                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  formData.accessMethod === "free_document"
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                }`}
-              >
-                {formData.accessMethod === "free_document" && (
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                )}
-              </div>
-              Documento libre
-            </label>
           </div>
 
           {/* Requirements */}
@@ -551,8 +523,8 @@ export default function CreateAssemblyForm({
             {submitting
               ? "Guardando..."
               : editAssemblyId
-              ? "Guardar Cambios"
-              : "Crear Asamblea"}
+                ? "Guardar Cambios"
+                : "Crear Asamblea"}
           </Button>
         </div>
       </div>

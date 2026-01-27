@@ -54,7 +54,7 @@ const SuperAdminPage = () => {
             ...op,
             entitiesCount: res.success ? res.data.length : 0,
           };
-        })
+        }),
       );
       setOperatorsWithEntities(opsWithEntities);
     };
@@ -74,7 +74,7 @@ const SuperAdminPage = () => {
             let operatorName = "";
             if (entityData && entityData.operatorId) {
               const operator = operators.find(
-                (op) => op.id === entityData.operatorId
+                (op) => op.id === entityData.operatorId,
               );
               operatorName = operator ? operator.name : "Operador";
             }
@@ -84,7 +84,7 @@ const SuperAdminPage = () => {
               entityName: entityData ? entityData.name : "Entidad",
               operatorName,
             };
-          })
+          }),
         );
         setAssembliesWithDetails(assembliesWithFullDetails);
       }
@@ -194,7 +194,7 @@ const SuperAdminPage = () => {
                       router.push(
                         `/superAdmin/operadores/${
                           assembly.operatorId || "unknown"
-                        }/entity/${assembly.entityId}/assembly/${assembly.id}`
+                        }/entity/${assembly.entityId}/assembly/${assembly.id}`,
                       )
                     }
                   />

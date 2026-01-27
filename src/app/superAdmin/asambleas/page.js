@@ -57,7 +57,7 @@ const AssembliesPage = () => {
       loading={loading}
       onCreateClick={() => router.push("/superAdmin/operadores")}
       getDetailUrl={(a) =>
-        `/superAdmin/operadores/${a.operatorId}/entity/${a.entityId}/assembly/${a.id}`
+        `/superAdmin/operadores/${a.operatorId}/${a.entityId}/${a.id}`
       }
     />
   );

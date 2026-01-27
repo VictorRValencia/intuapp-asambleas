@@ -50,6 +50,20 @@ export async function createQuestion(assemblyId, questionData) {
 }
 
 /**
+ * Updates an existing question
+ */
+export async function updateQuestion(questionId, questionData) {
+  try {
+    const questionRef = doc(db, "question", questionId);
+    await updateDoc(questionRef, questionData);
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating question:", error);
+    return { success: false, error };
+  }
+}
+
+/**
  * Updates question status
  */
 export async function updateQuestionStatus(questionId, status) {
@@ -83,6 +97,32 @@ export async function submitVote(questionId, registryId, answerData) {
     return { success: true };
   } catch (error) {
     console.error("Error submitting vote:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Submits multiple votes for a question in a single operation
+ * votes: Array of { registryId, answer }
+ */
+export async function submitBatchVotes(questionId, votes) {
+  try {
+    const questionRef = doc(db, "question", questionId);
+    const updates = {};
+    const timestamp = new Date().toISOString();
+
+    votes.forEach((v) => {
+      updates[`answers.${v.registryId}`] = {
+        ...v.answer,
+        votedAt: timestamp,
+      };
+    });
+
+    await updateDoc(questionRef, updates);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error submitting batch votes:", error);
     return { success: false, error };
   }
 }

@@ -16,7 +16,9 @@ import {
   createEntityAdmin,
   getEntitiesByOperator,
   createAssemblyRegistriesList,
+  getAssemblyRegistriesList,
 } from "@/lib/entities";
+import { getAllAssemblies } from "@/lib/assembly";
 import * as XLSX from "xlsx";
 
 import { usePageTitle } from "@/context/PageTitleContext";
@@ -47,6 +49,7 @@ import {
 } from "lucide-react";
 
 import EntitiesList from "@/components/entities/EntitiesList";
+import Button from "@/components/basics/Button";
 
 const OperatorDetailPage = () => {
   const { id } = useParams();
@@ -113,7 +116,53 @@ const OperatorDetailPage = () => {
 
       const resEntities = await getEntitiesByOperator(id);
       if (resEntities.success) {
-        setEntities(resEntities.data);
+        const rawEntities = resEntities.data;
+
+        // Fetch All Assemblies to find active/next ones
+        const assemblyRes = await getAllAssemblies();
+        const allAssemblies = assemblyRes.success ? assemblyRes.data : [];
+
+        // Enrich Entities
+        const enrichedEntities = await Promise.all(
+          rawEntities.map(async (e) => {
+            const entityAssemblies = allAssemblies.filter(
+              (a) => a.entityId === e.id,
+            );
+
+            const activeAssembly = entityAssemblies.find(
+              (a) => a.status === "started",
+            );
+
+            const futureAssemblies = entityAssemblies
+              .filter((a) => a.status !== "finished" && a.status !== "started")
+              .sort((a, b) => new Date(a.date) - new Date(b.date));
+            const nextAssembly = futureAssemblies[0] || null;
+
+            let asambleistasCount = 0;
+            if (e.assemblyRegistriesListId) {
+              const listRes = await getAssemblyRegistriesList(
+                e.assemblyRegistriesListId,
+              );
+              if (listRes.success && listRes.data) {
+                asambleistasCount = Object.keys(listRes.data).length;
+              }
+            }
+
+            return {
+              ...e,
+              asambleistasCount,
+              nextAssembly: nextAssembly
+                ? { date: nextAssembly.date, time: nextAssembly.hour }
+                : null,
+              activeAssembly: activeAssembly
+                ? { name: activeAssembly.name, startedAgo: "" }
+                : null,
+              hasAssemblies: entityAssemblies.length > 0,
+            };
+          }),
+        );
+
+        setEntities(enrichedEntities);
       }
     } else {
       toast.error("Error cargando operador");
@@ -130,8 +179,11 @@ const OperatorDetailPage = () => {
   };
 
   useEffect(() => {
-    fetchOperatorAndEntities();
-    fetchEntityTypes();
+    const init = async () => {
+      await fetchOperatorAndEntities();
+      await fetchEntityTypes();
+    };
+    init();
   }, [fetchOperatorAndEntities]);
 
   useEffect(() => {
@@ -139,10 +191,12 @@ const OperatorDetailPage = () => {
       setVirtualSegments([{ label: "Crear Entidad" }]);
     } else {
       setVirtualSegments([]);
-      // Reset excel data when closing form
-      setExcelData([]);
-      setExcelHeaders([]);
-      setExcelFileName("");
+      // Use a timeout or a different effect to avoid synchronous state update during render/cleanup
+      setTimeout(() => {
+        setExcelData([]);
+        setExcelHeaders([]);
+        setExcelFileName("");
+      }, 0);
     }
     return () => setVirtualSegments([]);
   }, [showEntityForm, setVirtualSegments]);
@@ -190,7 +244,7 @@ const OperatorDetailPage = () => {
               {rowValidation.errors.length > 3 && <li>...</li>}
             </ul>
           </div>,
-          { autoClose: 10000 }
+          { autoClose: 10000 },
         );
       } else {
         toast.success("Archivo cargado. Verifique los datos en el paso 4.");
@@ -219,7 +273,7 @@ const OperatorDetailPage = () => {
       id,
       operatorData.representativeId,
       userData,
-      representativeData
+      representativeData,
     );
 
     if (res.success) {
@@ -235,7 +289,7 @@ const OperatorDetailPage = () => {
   const handleDelete = async () => {
     if (
       confirm(
-        "¿Estás seguro de que deseas eliminar este operador? Esta acción no se puede deshacer."
+        "¿Estás seguro de que deseas eliminar este operador? Esta acción no se puede deshacer.",
       )
     ) {
       setLoading(true);
@@ -254,14 +308,14 @@ const OperatorDetailPage = () => {
     // Validations - Only required: name, type, city, and excel database
     if (!entityForm.name || !entityForm.type || !entityForm.city) {
       toast.warn(
-        "Por favor complete los campos obligatorios: Nombre de la entidad, Tipo de entidad y Ciudad"
+        "Por favor complete los campos obligatorios: Nombre de la entidad, Tipo de entidad y Ciudad",
       );
       return;
     }
 
     if (excelData.length === 0) {
       toast.warn(
-        "Debe cargar la base de datos de asambleístas para crear la entidad."
+        "Debe cargar la base de datos de asambleístas para crear la entidad.",
       );
       return;
     }
@@ -278,7 +332,7 @@ const OperatorDetailPage = () => {
               <li key={i}>{err}</li>
             ))}
           </ul>
-        </div>
+        </div>,
       );
       setEntityLoading(false);
       return;
@@ -294,7 +348,7 @@ const OperatorDetailPage = () => {
               <li key={i}>{err}</li>
             ))}
           </ul>
-        </div>
+        </div>,
       );
       setEntityLoading(false);
       return;
@@ -341,7 +395,7 @@ const OperatorDetailPage = () => {
       entityData,
       resAdmin.id,
       id,
-      operatorData.representativeId
+      operatorData.representativeId,
     );
 
     if (resEntity.success) {
@@ -704,23 +758,25 @@ const OperatorDetailPage = () => {
     );
   }
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col ">
       <div className="hidden">
         <TopBar pageTitle={operatorData.name} />
       </div>
 
-      <div className="p-8 flex flex-col gap-8 w-full max-w-6xl mx-auto">
+      <div className=" flex flex-col gap-8 mx-15">
         <div className="flex items-center justify-between">
           <h1 className="text-[32px] font-bold text-[#0E3C42]">
             {operatorData.name}
           </h1>
-          <button
+          <Button
+            variant="primary"
+            size="M"
+            className="!text-sm !py-3 !px-4 !bg-[#94A2FF] !text-[#000000] !font-bold"
             onClick={handleDelete}
-            className="flex items-center gap-2 bg-[#94A2FF] hover:bg-[#7e8ce0] text-white px-6 py-3 rounded-full font-medium shadow-md transition"
           >
             <Trash2 size={20} />
             Eliminar Operador
-          </button>
+          </Button>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
@@ -729,22 +785,26 @@ const OperatorDetailPage = () => {
               Información General
             </h2>
             {!isEditing ? (
-              <button
+              <Button
+                variant="primary"
+                size="M"
+                className="!text-sm !py-3 !px-4 !bg-[#94A2FF] !text-[#000000] !font-bold"
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 bg-[#94A2FF] hover:bg-[#7e8ce0] text-white px-5 py-2 rounded-full font-medium shadow-sm transition text-sm"
               >
                 <Edit2 size={16} />
                 Editar información
-              </button>
+              </Button>
             ) : (
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="primary"
+                  size="M"
+                  className="!text-sm !py-3 !px-4 !bg-[#94A2FF] !text-[#000000] !font-bold"
                   onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-2 border border-gray-300 text-gray-600 px-4 py-2 rounded-full font-medium text-sm hover:bg-gray-50"
                 >
                   <X size={16} />
                   Cancelar
-                </button>
+                </Button>
                 <button
                   onClick={handleSave}
                   className="flex items-center gap-2 bg-[#6A7EFF] hover:bg-[#5b6ef0] text-white px-5 py-2 rounded-full font-medium shadow-sm transition text-sm"
@@ -919,25 +979,22 @@ const OperatorDetailPage = () => {
 
           {/* Section 3: Entities */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-[#0E3C42]">Entidades</h2>
-            <button
+            <h2 className="text-[24px] font-bold text-[#0E3C42]">Entidades</h2>
+            <Button
+              variant="primary"
+              size="M"
+              className="!text-sm !py-3 !px-4 !bg-[#94A2FF] !text-[#000000] !font-bold"
               onClick={() => setShowEntityForm(true)}
-              className="flex items-center gap-2 bg-[#6A7EFF] hover:bg-[#5b6ef0] text-white px-5 py-2 rounded-full font-medium shadow-sm transition text-sm"
             >
-              <Plus size={16} />
-              Crear Entidad
-            </button>
+              <Plus size={18} /> Crear Entidad
+            </Button>
           </div>
 
           <EntitiesList
             entities={entities}
             onManageEntity={(entity) =>
-              router.push(`/superAdmin/operadores/${id}/entity/${entity.id}`)
+              router.push(`/superAdmin/operadores/${id}/${entity.id}`)
             }
-            onCreateAssembly={(entity) => {
-              // Logic to create assembly if needed, or redirect
-              // router.push(...)
-            }}
             onCreateEntity={() => setShowEntityForm(true)}
           />
         </div>

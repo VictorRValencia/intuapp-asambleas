@@ -38,7 +38,7 @@ export default function AssembliesList({
         (a) =>
           a.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           a.entityName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          a.operatorName?.toLowerCase().includes(searchTerm.toLowerCase())
+          a.operatorName?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -92,7 +92,7 @@ export default function AssembliesList({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredAssemblies.slice(
     indexOfFirstItem,
-    indexOfLastItem
+    indexOfLastItem,
   );
   const totalPages = Math.ceil(filteredAssemblies.length / itemsPerPage);
 
@@ -117,7 +117,7 @@ export default function AssembliesList({
           <Button
             onClick={onCreateClick}
             icon={Plus}
-            className="shadow-lg shadow-indigo-100"
+            className="flex items-center gap-2 bg-[#94A2FF] !text-[#000000] hover:bg-[#7a8ce0] !font-bold px-6 py-3 font-semibold shadow-md transition"
           >
             Crear Asamblea
           </Button>
@@ -274,7 +274,7 @@ export default function AssembliesList({
                   {/* Action Button */}
                   <a
                     href={getDetailUrl ? getDetailUrl(assembly) : "#"}
-                    className="w-full bg-[#8B9DFF] hover:bg-[#7a8ce0] text-white py-3 rounded-xl font-semibold shadow-lg shadow-indigo-100 transition flex items-center justify-center gap-2"
+                    className="w-full bg-[#8B9DFF] hover:bg-[#7a8ce0] text-black  py-3 rounded-xl font-bold shadow-lg shadow-indigo-100 transition flex items-center justify-center gap-2"
                   >
                     <Eye size={18} />
                     Ver Asamblea
@@ -366,17 +366,17 @@ export default function AssembliesList({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mb-8">
-            <button
+            <Button
               onClick={() => paginate(currentPage - 1)}
               disabled={currentPage === 1}
               className={`p-2 rounded-lg border transition ${
                 currentPage === 1
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  ? "border-gray-200 text-black cursor-not-allowed"
+                  : "border-gray-300 text-black hover:bg-gray-50"
               }`}
             >
               <ChevronLeft size={20} />
-            </button>
+            </Button>
 
             {[...Array(totalPages)].map((_, index) => {
               const pageNumber = index + 1;
